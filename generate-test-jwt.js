@@ -7,10 +7,10 @@ const JWT_SECRET = 'bc6826cbca2987e810984a196480f150a68c319e8e78121cbc0409e7cdc4
 
 // Test user data - you can modify these values
 const testUser = {
-  email: 'testuser@example.com',
-  firstName: 'Test',
+  email: 'newuser@example.com',
+  firstName: 'New',
   lastName: 'User',
-  externalId: 'score-user-123456'
+  externalId: 'score-user-789012'
 };
 
 // Generate JWT token

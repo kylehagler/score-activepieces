@@ -304,11 +304,7 @@ const routes = [
   },
   {
     path: '/sign-up',
-    element: (
-      <PageTitle title="Sign Up">
-        <SignUpPage />
-      </PageTitle>
-    ),
+    element: <Navigate to="/sign-in" replace />,
   },
 
   ...ProjectRouterWrapper({

@@ -124,9 +124,10 @@ const SignInForm: React.FC = () => {
     mutate(data);
   };
 
-  if (!userCreated) {
-    return <Navigate to="/sign-up" />;
-  }
+  // Sign-up disabled - SSO only
+  // if (!userCreated) {
+  //   return <Navigate to="/sign-up" />;
+  // }
 
   return (
     <>

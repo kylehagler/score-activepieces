@@ -82,7 +82,12 @@ npm install jsonwebtoken
 ### 2. **Configure Environment**
 Add to Score's environment configuration:
 ```env
-ACTIVEPIECES_URL=http://localhost:3000
+# Production
+ACTIVEPIECES_URL=https://flows.score.insure
+
+# Development (if needed)
+# ACTIVEPIECES_URL=http://localhost:3000
+
 ACTIVEPIECES_JWT_SECRET=bc6826cbca2987e810984a196480f150a68c319e8e78121cbc0409e7cdc4be55
 ```
 
@@ -155,63 +160,105 @@ module.exports = ActivePiecesSSO;
 
 ### 4. **Integrate with Score Authentication Flow**
 
-#### Option A: Direct Token Pass (Recommended for Seamless Login)
+#### **Recommended Approach: "Flows" Button with Token Caching**
+
+This is the optimal approach for users who stay logged into Score for extended periods. The ActivePieces token is cached in the database to avoid repeated SSO calls.
+
 ```javascript
-// In your authentication handler after Supabase login
-const ActivePiecesSSO = require('./services/activepieces-sso');
+// When user clicks "Flows" button in Score
+async function openActivepieces() {
+  const { data: { user } } = await supabase.auth.getUser();
 
-async function handlePostLogin(supabaseUser) {
-  try {
-    const apSSO = new ActivePiecesSSO();
+  // Check for cached token first
+  const { data: cachedToken } = await supabase
+    .from('activepieces_tokens')
+    .select('*')
+    .eq('user_id', user.id)
+    .single();
 
-    // Authenticate with ActivePieces
-    const apAuth = await apSSO.authenticateUser(supabaseUser);
-
-    // OPTION A: Direct redirect with token (recommended)
-    // This will automatically log the user in and redirect to flows
-    window.location.href = apSSO.getActivePiecesUrl(apAuth.token, apAuth.projectId);
-
-    return apAuth;
-  } catch (error) {
-    console.error('ActivePieces SSO failed:', error);
-    // Handle gracefully - Score should work even if AP is down
+  // Use cached token if it exists and hasn't expired
+  if (cachedToken && new Date(cachedToken.expires_at) > new Date()) {
+    // Open ActivePieces with cached token (instant!)
+    window.open(
+      `https://flows.score.insure/sso-callback.html?token=${cachedToken.token}&projectId=${cachedToken.project_id}`,
+      '_blank'
+    );
+    return;
   }
+
+  // No valid token - perform SSO
+  const apSSO = new ActivePiecesSSO();
+
+  // Generate 5-minute Score JWT
+  const scoreJWT = apSSO.generateSSOToken(user);
+
+  // Exchange for 7-day ActivePieces token
+  const response = await fetch('https://flows.score.insure/api/v1/authentication/sso', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token: scoreJWT })
+  });
+
+  const { token, projectId } = await response.json();
+
+  // Cache the token
+  await supabase
+    .from('activepieces_tokens')
+    .upsert({
+      user_id: user.id,
+      token: token,
+      project_id: projectId,
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
+    });
+
+  // Open ActivePieces with fresh token
+  window.open(
+    `https://flows.score.insure/sso-callback.html?token=${token}&projectId=${projectId}`,
+    '_blank'
+  );
 }
 ```
 
-#### Option B: Store Token for Later Use (for API calls)
+**User Experience:**
+- **First click**: ~200ms delay (SSO call) → opens ActivePieces
+- **Subsequent clicks**: Instant (uses cached token)
+- **After 7 days**: Automatically refreshes token on next click
+
+#### Alternative: Simple Approach (No Caching)
+
+If you don't want to manage token storage, you can generate a fresh token every time:
+
 ```javascript
-async function handlePostLogin(supabaseUser) {
-  try {
-    const apSSO = new ActivePiecesSSO();
+// Simpler version - always perform SSO
+async function openActivepieces() {
+  const { data: { user } } = await supabase.auth.getUser();
+  const apSSO = new ActivePiecesSSO();
 
-    // Authenticate with ActivePieces
-    const apAuth = await apSSO.authenticateUser(supabaseUser);
+  // Generate Score JWT
+  const scoreJWT = apSSO.generateSSOToken(user);
 
-    // Store tokens for API usage
-    sessionStorage.setItem('activepieces_token', apAuth.token);
-    sessionStorage.setItem('activepieces_project_id', apAuth.projectId);
+  // Call SSO endpoint
+  const response = await fetch('https://flows.score.insure/api/v1/authentication/sso', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token: scoreJWT })
+  });
 
-    // Use tokens for API calls without redirecting
-    const apClient = new ActivePiecesClient(apAuth.token, apAuth.projectId);
-    const flows = await apClient.getFlows();
+  const { token, projectId } = await response.json();
 
-    return apAuth;
-  } catch (error) {
-    console.error('ActivePieces SSO failed:', error);
-  }
+  // Open ActivePieces
+  window.open(
+    `https://flows.score.insure/sso-callback.html?token=${token}&projectId=${projectId}`,
+    '_blank'
+  );
 }
 ```
 
-#### Option C: Manual Browser Console Login (for Testing)
-```javascript
-// After getting the token from SSO, provide this to the user:
-console.log(`
-To login to ActivePieces, open http://localhost:4200 and run this in the console:
-localStorage.setItem('token', '${apAuth.token}');
-window.location.href = '/flows';
-`);
-```
+**Trade-offs:**
+- ✅ Simpler implementation
+- ✅ No database storage needed
+- ❌ Slightly slower (~200ms per click)
+- ❌ Generates more tokens
 
 ### 5. **Create SSO Callback Handler (Required for Direct Token Pass)**
 
@@ -319,209 +366,87 @@ class ActivePiecesClient {
 }
 ```
 
-### 6. **Token Storage Strategy (Recommended)**
+### 6. **Database Setup for Token Caching (Recommended)**
 
-Store the ActivePieces token in Supabase for persistence and easy access:
+Create a table in Supabase to cache ActivePieces tokens:
 
-#### Option 1: Store in User Metadata (Simple)
-```javascript
-// After successful SSO authentication
-async function storeAPTokenInSupabase(apAuth) {
-  const { data, error } = await supabase.auth.updateUser({
-    data: {
-      activepieces_token: apAuth.token,
-      activepieces_project_id: apAuth.projectId,
-      activepieces_token_expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-    }
-  });
-  return { data, error };
-}
-```
-
-#### Option 2: Store in Separate Table (Better for Security)
 ```sql
--- Create table in Supabase
-CREATE TABLE user_activepieces_tokens (
+-- Create table in Supabase SQL editor
+CREATE TABLE activepieces_tokens (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  ap_token TEXT NOT NULL,
-  ap_project_id TEXT NOT NULL,
-  ap_user_id TEXT NOT NULL,
+  token TEXT NOT NULL,
+  project_id TEXT NOT NULL,
   expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(user_id)
 );
 
--- Enable RLS
-ALTER TABLE user_activepieces_tokens ENABLE ROW LEVEL SECURITY;
+-- Enable Row Level Security
+ALTER TABLE activepieces_tokens ENABLE ROW LEVEL SECURITY;
 
--- Create policy for users to access their own tokens
-CREATE POLICY "Users can manage their own tokens" ON user_activepieces_tokens
-  FOR ALL USING (auth.uid() = user_id);
+-- Users can only view/manage their own tokens
+CREATE POLICY "Users can view their own tokens"
+  ON activepieces_tokens FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own tokens"
+  ON activepieces_tokens FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own tokens"
+  ON activepieces_tokens FOR UPDATE
+  USING (auth.uid() = user_id);
 ```
 
-```javascript
-// Store token in database
-async function storeAPToken(userId, apAuth) {
-  const { data, error } = await supabase
-    .from('user_activepieces_tokens')
-    .upsert({
-      user_id: userId,
-      ap_token: apAuth.token,
-      ap_project_id: apAuth.projectId,
-      ap_user_id: apAuth.userId,
-      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      updated_at: new Date()
-    }, {
-      onConflict: 'user_id'
-    });
-  return { data, error };
-}
+**Why This Approach?**
+- ✅ **Fast**: Instant login after first SSO (no repeated API calls)
+- ✅ **Secure**: RLS ensures users can only access their own tokens
+- ✅ **Automatic Refresh**: Tokens are refreshed automatically when expired
+- ✅ **Simple**: No complex session management needed
 
-// Retrieve token
-async function getAPToken(userId) {
-  const { data, error } = await supabase
-    .from('user_activepieces_tokens')
-    .select('*')
-    .eq('user_id', userId)
-    .single();
+### 7. **Understanding the Token Flow**
 
-  if (data && new Date(data.expires_at) > new Date()) {
-    return data.ap_token;
-  }
+**Important: Two Different Tokens**
 
-  // Token expired or not found, need to refresh
-  return null;
-}
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Token Lifecycle                         │
+└─────────────────────────────────────────────────────────────┘
+
+1. User clicks "Flows" in Score
+   ↓
+2. Score generates 5-minute JWT (Score Token)
+   {
+     email: "user@example.com",
+     firstName: "John",
+     lastName: "Doe",
+     externalId: "score-user-123"
+   }
+   ↓
+3. Score sends to: POST /api/v1/authentication/sso
+   Body: { token: "5-minute-score-jwt" }
+   ↓
+4. ActivePieces validates and returns 7-day token:
+   {
+     token: "7-day-activepieces-jwt",  ← USE THIS!
+     projectId: "abc123",
+     userId: "xyz789"
+   }
+   ↓
+5. Score caches the 7-day token in database
+   ↓
+6. User opens ActivePieces with 7-day token
+   ↓
+7. For next 7 days: Use cached token (instant login!)
 ```
 
-### 7. **Complete Authentication Flow with Token Storage**
-
-```javascript
-// Complete implementation in Score
-class ActivePiecesIntegration {
-  constructor(supabase) {
-    this.supabase = supabase;
-    this.apSSO = new ActivePiecesSSO();
-  }
-
-  async authenticateUser(user) {
-    try {
-      // Check for existing valid token
-      const existingToken = await this.getStoredToken(user.id);
-      if (existingToken) {
-        return {
-          token: existingToken.ap_token,
-          projectId: existingToken.ap_project_id,
-          cached: true
-        };
-      }
-
-      // No valid token, perform SSO
-      const apAuth = await this.apSSO.authenticateUser(user);
-
-      // Store the new token
-      await this.storeToken(user.id, apAuth);
-
-      return {
-        ...apAuth,
-        cached: false
-      };
-    } catch (error) {
-      console.error('ActivePieces authentication failed:', error);
-      throw error;
-    }
-  }
-
-  async getStoredToken(userId) {
-    const { data } = await this.supabase
-      .from('user_activepieces_tokens')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
-
-    if (data && new Date(data.expires_at) > new Date()) {
-      return data;
-    }
-    return null;
-  }
-
-  async storeToken(userId, apAuth) {
-    return await this.supabase
-      .from('user_activepieces_tokens')
-      .upsert({
-        user_id: userId,
-        ap_token: apAuth.token,
-        ap_project_id: apAuth.projectId,
-        ap_user_id: apAuth.userId,
-        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        updated_at: new Date()
-      }, {
-        onConflict: 'user_id'
-      });
-  }
-
-  async refreshToken(user) {
-    const apAuth = await this.apSSO.authenticateUser(user);
-    await this.storeToken(user.id, apAuth);
-    return apAuth;
-  }
-}
-
-// Usage in your auth flow
-async function handlePostLogin(supabaseUser) {
-  const apIntegration = new ActivePiecesIntegration(supabase);
-
-  try {
-    const apAuth = await apIntegration.authenticateUser(supabaseUser);
-
-    if (apAuth.cached) {
-      console.log('Using cached ActivePieces token');
-    } else {
-      console.log('New ActivePieces token generated');
-    }
-
-    // Option 1: Redirect to ActivePieces
-    window.location.href = `http://localhost:4200/sso-callback.html?token=${apAuth.token}&projectId=${apAuth.projectId}`;
-
-    // Option 2: Store for API usage
-    sessionStorage.setItem('ap_token', apAuth.token);
-
-    return apAuth;
-  } catch (error) {
-    // Handle error - Score should continue working
-    console.error('ActivePieces integration error:', error);
-  }
-}
-```
-
-### 8. **Handle Token Refresh**
-
-Since tokens expire after 7 days, implement automatic refresh:
-
-```javascript
-async function ensureValidAPToken(user) {
-  const apIntegration = new ActivePiecesIntegration(supabase);
-
-  // This will return cached token if valid, or refresh if expired
-  return await apIntegration.authenticateUser(user);
-}
-
-// Middleware to check token before AP API calls
-async function makeAPRequest(endpoint, options = {}) {
-  const user = await supabase.auth.getUser();
-  const apAuth = await ensureValidAPToken(user.data.user);
-
-  return fetch(`http://localhost:3000/v1${endpoint}`, {
-    ...options,
-    headers: {
-      'Authorization': `Bearer ${apAuth.token}`,
-      ...options.headers
-    }
-  });
-}
-```
+**Key Points:**
+- **Score JWT (5 min)**: Only used ONCE to call SSO endpoint
+- **ActivePieces Token (7 days)**: Used for logging in and API calls
+- **Never** send the ActivePieces token back to the SSO endpoint
+- Cache the ActivePieces token to avoid repeated SSO calls
 
 ## Testing the Integration
 
@@ -613,22 +538,47 @@ JOIN user_identity ui ON u."identityId" = ui.id
 WHERE ui.email = 'user@example.com';
 ```
 
+## Deployment Information
+
+### Production URLs
+- **ActivePieces**: https://flows.score.insure
+- **SSO Endpoint**: `POST https://flows.score.insure/api/v1/authentication/sso`
+- **SSO Callback**: https://flows.score.insure/sso-callback.html
+
+### Server Details
+- **Droplet IP**: 165.227.213.9
+- **Domain**: flows.score.insure
+- **SSL**: Let's Encrypt (auto-configured)
+- **Environment Variables**: `/opt/activepieces/.env.production`
+
+### Deployment Status
+✅ ActivePieces deployed and running
+✅ Custom SSO code integrated
+✅ SSL certificate configured
+✅ PostgreSQL database initialized
+✅ SSO endpoint tested and working
+
 ## Next Steps
 
-### Score Side
-1. [ ] Implement SSO service
-2. [ ] Add to authentication flow
-3. [ ] Test with real Supabase users
-4. [ ] Add error handling and retry logic
-5. [ ] Implement token refresh mechanism
-6. [ ] Add monitoring/logging
+### Score Side Implementation
+1. [ ] Create `activepieces_tokens` table in Supabase
+2. [ ] Install `jsonwebtoken` dependency
+3. [ ] Implement ActivePiecesSSO service
+4. [ ] Add "Flows" button to Score UI
+5. [ ] Implement `openActivepieces()` function with token caching
+6. [ ] Test with real Score users
+7. [ ] Add error handling for SSO failures
+8. [ ] Monitor token expiration and refresh
 
-### ActivePieces Side (Complete)
-1. [x] Add SCORE provider
+### ActivePieces Side (Complete ✅)
+1. [x] Add SCORE provider to authentication system
 2. [x] Create JWT validation service
-3. [x] Implement SSO endpoint
-4. [x] Test compilation
-5. [x] Document implementation
+3. [x] Implement SSO endpoint at `/api/v1/authentication/sso`
+4. [x] Deploy to production (flows.score.insure)
+5. [x] Configure SSL with Let's Encrypt
+6. [x] Test SSO endpoint with Postman
+7. [x] Verify user creation and token generation
+8. [x] Document implementation
 
 ## Support & Troubleshooting
 
