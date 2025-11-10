@@ -870,7 +870,7 @@
   "Email domain is disallowed": "メールドメインは許可されていません",
   "Email authentication has been disabled": "メール認証が無効になっています",
   "Forgot your password?": "パスワードをお忘れですか？",
-  "Sign up is restricted. You need an invitation to join. Please contact the administrator.": "サインアップが制限されています。参加するには招待状が必要です。管理者に連絡してください。",
+  "Sign up is restricted!!! You need an invitation to join. Please contact the administrator.": "サインアップが制限されています。参加するには招待状が必要です。管理者に連絡してください。",
   "Email is already used": "メールアドレスは既に使用されています",
   "Email authentication is disabled": "メール認証が無効になっています",
   "First name is required": "名は必須です",

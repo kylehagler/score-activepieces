@@ -962,7 +962,7 @@
   "Email domain is disallowed": "Email domain is disallowed",
   "Email authentication has been disabled": "Email authentication has been disabled",
   "Forgot your password?": "هل نسيت كلمة المرور؟",
-  "Sign up is restricted. You need an invitation to join. Please contact the administrator.": "Sign up is restricted. You need an invitation to join. Please contact the administrator.",
+  "Sign up is restricted!!! You need an invitation to join. Please contact the administrator.": "Sign up is restricted!!! You need an invitation to join. Please contact the administrator.",
   "Email is already used": "البريد الإلكتروني مستخدم بالفعل",
   "Email authentication is disabled": "Email authentication is disabled",
   "First name is required": "الاسم الأول مطلوب",

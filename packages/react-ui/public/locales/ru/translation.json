@@ -967,7 +967,7 @@
   "Email domain is disallowed": "Домен электронной почты запрещен",
   "Email authentication has been disabled": "Аутентификация по электронной почте отключена",
   "Forgot your password?": "Забыли пароль?",
-  "Sign up is restricted. You need an invitation to join. Please contact the administrator.": "Регистрация ограничена. Вам необходимо приглашение для входа. Пожалуйста, свяжитесь с администратором.",
+  "Sign up is restricted!!! You need an invitation to join. Please contact the administrator.": "Регистрация ограничена. Вам необходимо приглашение для входа. Пожалуйста, свяжитесь с администратором.",
   "Email is already used": "Адрес электронной почты уже используется",
   "Email authentication is disabled": "Проверка подлинности электронной почты отключена",
   "First name is required": "Требуется имя",

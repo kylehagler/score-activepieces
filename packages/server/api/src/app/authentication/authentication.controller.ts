@@ -17,6 +17,8 @@ import { system } from '../helper/system/system'
 import { platformUtils } from '../platform/platform.utils'
 import { userService } from '../user/user-service'
 import { authenticationService } from './authentication.service'
+import { jwtSsoService } from './jwt-sso/jwt-sso.service'
+import { SsoLoginRequest } from './jwt-sso/jwt-sso-request'
 
 export const authenticationController: FastifyPluginAsyncTypebox = async (
     app,
@@ -65,6 +67,51 @@ export const authenticationController: FastifyPluginAsyncTypebox = async (
             action: ApplicationEventName.USER_SIGNED_IN,
             data: {},
         })
+
+        return response
+    })
+
+    app.post('/sso', SsoLoginRequestOptions, async (request) => {
+        // Validate the JWT token from Score
+        const scoreUserData = await jwtSsoService(request.log).validateScoreJwt({
+            token: request.body.token,
+        })
+
+        // Get platform ID if configured
+        const predefinedPlatformId = await platformUtils.getPlatformIdForRequest(request)
+
+        // Use federated authentication to handle user creation/login
+        const response = await authenticationService(request.log).federatedAuthn({
+            email: scoreUserData.email,
+            firstName: scoreUserData.firstName,
+            lastName: scoreUserData.lastName,
+            provider: UserIdentityProvider.SCORE,
+            predefinedPlatformId,
+            newsLetter: false,
+            trackEvents: true,
+        })
+
+        const responsePlatformId = response.platformId
+        assertNotNullOrUndefined(responsePlatformId, 'Platform ID is required')
+
+        // Track the SSO login event
+        eventsHooks.get(request.log).sendUserEvent({
+            platformId: responsePlatformId,
+            userId: response.id,
+            projectId: response.projectId,
+            ip: networkUtils.extractClientRealIp(request, system.get(AppSystemProp.CLIENT_REAL_IP_HEADER)),
+        }, {
+            action: ApplicationEventName.USER_SIGNED_IN,
+            data: {},
+        })
+
+        request.log.info({
+            email: scoreUserData.email,
+            externalId: scoreUserData.externalId,
+            userId: response.id,
+            platformId: responsePlatformId,
+            projectId: response.projectId,
+        }, 'Score SSO login successful')
 
         return response
     })
@@ -132,5 +179,15 @@ const SignInRequestOptions = {
     },
     schema: {
         body: SignInRequest,
+    },
+}
+
+const SsoLoginRequestOptions = {
+    config: {
+        allowedPrincipals: ALL_PRINCIPAL_TYPES,
+        rateLimit: rateLimitOptions,
+    },
+    schema: {
+        body: SsoLoginRequest,
     },
 }

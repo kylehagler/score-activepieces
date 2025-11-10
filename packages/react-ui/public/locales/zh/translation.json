@@ -870,7 +870,7 @@
   "Email domain is disallowed": "不允许电子邮件域",
   "Email authentication has been disabled": "电子邮件身份验证已禁用",
   "Forgot your password?": "忘记密码？",
-  "Sign up is restricted. You need an invitation to join. Please contact the administrator.": "注册受到限制。您需要邀请加入。请与管理员联系。",
+  "Sign up is restricted!!! You need an invitation to join. Please contact the administrator.": "注册受到限制。您需要邀请加入。请与管理员联系。",
   "Email is already used": "电子邮件已被使用",
   "Email authentication is disabled": "电子邮件身份验证已禁用",
   "First name is required": "必填名",

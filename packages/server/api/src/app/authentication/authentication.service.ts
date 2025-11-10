@@ -28,15 +28,16 @@ export const authenticationService = (log: FastifyBaseLogger) => ({
         if (isNil(params.platformId)) {
             const userIdentity = await userIdentityService(log).create({
                 ...params,
-                verified: params.provider === UserIdentityProvider.GOOGLE || params.provider === UserIdentityProvider.JWT || params.provider === UserIdentityProvider.SAML,
+                verified: params.provider === UserIdentityProvider.GOOGLE || params.provider === UserIdentityProvider.JWT || params.provider === UserIdentityProvider.SAML || params.provider === UserIdentityProvider.SCORE,
             })
             return createUserAndPlatform(userIdentity, log)
         }
 
-        await authenticationUtils.assertUserIsInvitedToPlatformOrProject(log, {
-            email: params.email,
-            platformId: params.platformId,
-        })
+        // Disabled invitation check to allow open signups
+        // await authenticationUtils.assertUserIsInvitedToPlatformOrProject(log, {
+        //     email: params.email,
+        //     platformId: params.platformId,
+        // })
         const userIdentity = await userIdentityService(log).create({
             ...params,
             verified: true,
@@ -46,14 +47,23 @@ export const authenticationService = (log: FastifyBaseLogger) => ({
             platformRole: PlatformRole.MEMBER,
             platformId: params.platformId,
         })
-        await userInvitationsService(log).provisionUserInvitation({
-            email: params.email,
+
+        // Create a default project for the new user
+        const defaultProject = await projectService.create({
+            displayName: `${userIdentity.firstName}'s Project`,
+            platformId: params.platformId,
+            ownerId: user.id,
         })
+
+        // No longer provisioning invitations since we allow open signups
+        // await userInvitationsService(log).provisionUserInvitation({
+        //     email: params.email,
+        // })
 
         return authenticationUtils.getProjectAndToken({
             userId: user.id,
             platformId: params.platformId,
-            projectId: null,
+            projectId: defaultProject.id,
         })
     },
     async signInWithPassword(params: SignInWithPasswordParams): Promise<AuthenticationResponse> {

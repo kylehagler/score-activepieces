@@ -870,7 +870,7 @@
   "Email domain is disallowed": "Dominio de correo no permitido",
   "Email authentication has been disabled": "La autenticación de correo electrónico ha sido deshabilitada",
   "Forgot your password?": "¿Olvidaste tu contraseña?",
-  "Sign up is restricted. You need an invitation to join. Please contact the administrator.": "El registro está restringido. Necesita una invitación para unirse. Por favor, póngase en contacto con el administrador.",
+  "Sign up is restricted!!! You need an invitation to join. Please contact the administrator.": "El registro está restringido. Necesita una invitación para unirse. Por favor, póngase en contacto con el administrador.",
   "Email is already used": "El correo electrónico ya está en uso",
   "Email authentication is disabled": "Autenticación de correo está desactivada",
   "First name is required": "El nombre es obligatorio",

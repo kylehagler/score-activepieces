@@ -870,7 +870,7 @@
   "Email domain is disallowed": "E-mail domein is niet toegestaan",
   "Email authentication has been disabled": "E-mail authenticatie is uitgeschakeld",
   "Forgot your password?": "Wachtwoord vergeten?",
-  "Sign up is restricted. You need an invitation to join. Please contact the administrator.": "Aanmelden is beperkt. U heeft een uitnodiging nodig om deel te nemen. Neem contact op met de beheerder.",
+  "Sign up is restricted!!! You need an invitation to join. Please contact the administrator.": "Aanmelden is beperkt. U heeft een uitnodiging nodig om deel te nemen. Neem contact op met de beheerder.",
   "Email is already used": "Dit e-mailadres wordt al gebruikt",
   "Email authentication is disabled": "E-mail authenticatie is uitgeschakeld",
   "First name is required": "Voornaam is vereist",

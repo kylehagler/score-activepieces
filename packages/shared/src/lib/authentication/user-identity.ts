@@ -7,6 +7,7 @@ export enum UserIdentityProvider {
     GOOGLE = 'GOOGLE',
     SAML = 'SAML',
     JWT = 'JWT',
+    SCORE = 'SCORE',
 }
 export const UserIdentity = Type.Object({
     ...BaseModelSchema,

@@ -1,6 +1,7 @@
 import { getProjectMaxConcurrentJobsKey } from '@activepieces/server-shared'
 import {
     ActivepiecesError,
+    ApEdition,
     ApId,
     apId,
     assertNotNullOrUndefined,
@@ -187,7 +188,7 @@ async function getUsersFilters(params: GetAllForUserParams): Promise<FindOptions
     const user = await userService.getOneOrFail({ id: params.userId })
     const isPrivilegedUser = user.platformRole === PlatformRole.ADMIN || user.platformRole === PlatformRole.OPERATOR
     const displayNameFilter = params.displayName ? { displayName: ILike(`%${params.displayName}%`) } : {}
-    
+
     if (isPrivilegedUser) {
         // Platform admins and operators can see all projects in their platform
         return [{
@@ -195,13 +196,23 @@ async function getUsersFilters(params: GetAllForUserParams): Promise<FindOptions
             ...displayNameFilter,
         }]
     }
-    
-    // Only fetch project memberships for non-privileged users
+
+    // For community edition: regular members can only see projects they own
+    const edition = system.getEdition()
+    if (edition === ApEdition.COMMUNITY) {
+        return [{
+            platformId: params.platformId,
+            ownerId: params.userId,
+            ...displayNameFilter,
+        }]
+    }
+
+    // Only fetch project memberships for non-privileged users (enterprise/cloud)
     const projectIds = await projectMemberService(system.globalLogger()).getIdsOfProjects({
         platformId: params.platformId,
         userId: params.userId,
     })
-    
+
     // Regular members can only see projects they're members of
     return [{
         platformId: params.platformId,
