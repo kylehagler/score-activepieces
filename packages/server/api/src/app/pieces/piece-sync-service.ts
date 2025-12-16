@@ -1,6 +1,6 @@
 import { PieceMetadataModel, PieceMetadataModelSummary } from '@activepieces/pieces-framework'
-import { AppSystemProp, apVersionUtil } from '@activepieces/server-shared'
-import { ListVersionsResponse, PackageType, PieceSyncMode, PieceType } from '@activepieces/shared'
+import { AppSystemProp, apVersionUtil, filePiecesUtils } from '@activepieces/server-shared'
+import { isNil, ListVersionsResponse, PackageType, PieceSyncMode, PieceType } from '@activepieces/shared'
 import dayjs from 'dayjs'
 import { FastifyBaseLogger } from 'fastify'
 import { StatusCodes } from 'http-status-codes'
@@ -17,8 +17,14 @@ const CLOUD_API_URL = 'https://cloud.activepieces.com/api/v1/pieces'
 const piecesRepo = repoFactory(PieceMetadataEntity)
 const syncMode = system.get<PieceSyncMode>(AppSystemProp.PIECES_SYNC_MODE)
 
+// Local pieces to sync in addition to official pieces (loaded from filesystem)
+const LOCAL_PIECES = ['score']
+
 export const pieceSyncService = (log: FastifyBaseLogger) => ({
     async setup(): Promise<void> {
+        // Always sync local pieces first, regardless of sync mode
+        await syncLocalPieces(log)
+
         if (syncMode !== PieceSyncMode.OFFICIAL_AUTO) {
             log.info('Piece sync service is disabled')
             return
@@ -55,6 +61,9 @@ export const pieceSyncService = (log: FastifyBaseLogger) => ({
                 }
             }
             await Promise.all(promises)
+
+            // Also sync local pieces
+            await syncLocalPieces(log)
         }
         catch (error) {
             log.error({ error }, 'Error syncing pieces')
@@ -122,4 +131,47 @@ async function listPieces(): Promise<PieceMetadataModelSummary[]> {
         throw new Error(await response.text())
     }
     return response.json()
+}
+
+async function syncLocalPieces(log: FastifyBaseLogger): Promise<void> {
+    if (LOCAL_PIECES.length === 0) {
+        return
+    }
+
+    try {
+        log.info({ pieces: LOCAL_PIECES }, 'Syncing local pieces')
+        const pieces = await filePiecesUtils(LOCAL_PIECES, log).findAllPieces()
+
+        for (const piece of pieces) {
+            const existsInDb = await piecesRepo().existsBy({
+                name: piece.name,
+                version: piece.version,
+            })
+
+            if (!existsInDb) {
+                log.info({ name: piece.name, version: piece.version }, 'Syncing local piece into database')
+                await pieceMetadataService(log).create({
+                    pieceMetadata: {
+                        name: piece.name,
+                        displayName: piece.displayName,
+                        description: piece.description,
+                        logoUrl: piece.logoUrl,
+                        version: piece.version,
+                        minimumSupportedRelease: piece.minimumSupportedRelease,
+                        maximumSupportedRelease: piece.maximumSupportedRelease,
+                        auth: piece.auth,
+                        actions: piece.actions,
+                        triggers: piece.triggers,
+                        categories: piece.categories,
+                        authors: piece.authors,
+                    },
+                    packageType: PackageType.REGISTRY,
+                    pieceType: PieceType.OFFICIAL,
+                })
+            }
+        }
+    }
+    catch (error) {
+        log.error({ error }, 'Error syncing local pieces')
+    }
 }
