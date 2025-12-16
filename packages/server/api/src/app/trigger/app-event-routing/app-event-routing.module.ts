@@ -1,5 +1,6 @@
 import { facebookLeads } from '@activepieces/piece-facebook-leads'
 import { intercom } from '@activepieces/piece-intercom'
+import { score } from '@activepieces/piece-score'
 import { slack } from '@activepieces/piece-slack'
 import { square } from '@activepieces/piece-square'
 import { Piece } from '@activepieces/pieces-framework'
@@ -35,12 +36,14 @@ const appWebhooks: Record<string, Piece> = {
     square,
     'facebook-leads': facebookLeads,
     intercom,
+    score,
 }
 const pieceNames: Record<string, string> = {
     slack: '@activepieces/piece-slack',
     square: '@activepieces/piece-square',
     'facebook-leads': '@activepieces/piece-facebook-leads',
     intercom: '@activepieces/piece-intercom',
+    score: '@activepieces/piece-score',
 }
 
 export const appEventRoutingModule: FastifyPluginAsyncTypebox = async (app) => {

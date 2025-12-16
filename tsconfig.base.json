@@ -42,6 +42,9 @@
       "@activepieces/piece-square": [
         "packages/pieces/community/square/src/index.ts"
       ],
+      "@activepieces/piece-score": [
+        "packages/pieces/community/score/src/index.ts"
+      ],
       "@activepieces/server-shared": ["packages/server/shared/src/index.ts"],
       "@activepieces/shared": ["packages/shared/src/index.ts"],
       "@ee/*": ["packages/ee/*"],

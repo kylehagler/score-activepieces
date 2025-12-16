@@ -1,0 +1,52 @@
+{
+  "name": "pieces-score",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/pieces/community/score/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "options": {
+        "outputPath": "dist/packages/pieces/community/score",
+        "tsConfig": "packages/pieces/community/score/tsconfig.lib.json",
+        "packageJson": "packages/pieces/community/score/package.json",
+        "main": "packages/pieces/community/score/src/index.ts",
+        "assets": [
+          "packages/pieces/community/score/*.md"
+        ],
+        "buildableProjectDepsInPackageJsonType": "dependencies",
+        "updateBuildableProjectDepsInPackageJson": true
+      },
+      "dependsOn": [
+        "^build",
+        "prebuild"
+      ]
+    },
+    "publish": {
+      "command": "node tools/scripts/publish.mjs pieces-score {args.ver} {args.tag}",
+      "dependsOn": [
+        "build"
+      ]
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": [
+        "{options.outputFile}"
+      ]
+    },
+    "prebuild": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/pieces/community/score",
+        "command": "bun install --no-save"
+      },
+      "dependsOn": [
+        "^build"
+      ]
+    }
+  },
+  "tags": []
+}

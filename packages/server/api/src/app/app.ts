@@ -81,6 +81,7 @@ import { todoModule } from './todos/todo.module'
 import { appEventRoutingModule } from './trigger/app-event-routing/app-event-routing.module'
 import { triggerModule } from './trigger/trigger.module'
 import { platformUserModule } from './user/platform/platform-user-module'
+import { userWorkerController } from './user/user-worker-controller'
 import { invitationModule } from './user-invitations/user-invitation.module'
 import { webhookModule } from './webhooks/webhook-module'
 import { engineResponseWatcher } from './workers/engine-response-watcher'
@@ -196,6 +197,7 @@ export const setupApp = async (app: FastifyInstance): Promise<FastifyInstance> =
     await app.register(mcpModule)
     await pieceSyncService(app.log).setup()
     await app.register(platformUserModule)
+    await app.register(userWorkerController, { prefix: '/v1/worker/users' })
     await app.register(issuesModule)
     await app.register(alertsModule)
     await app.register(invitationModule)

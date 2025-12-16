@@ -89,6 +89,7 @@ export const authenticationController: FastifyPluginAsyncTypebox = async (
             predefinedPlatformId,
             newsLetter: false,
             trackEvents: true,
+            externalId: scoreUserData.externalId,
         })
 
         const responsePlatformId = response.platformId

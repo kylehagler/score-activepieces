@@ -132,15 +132,44 @@ export const authenticationService = (log: FastifyBaseLogger) => ({
         await userInvitationsService(log).provisionUserInvitation({
             email: params.email,
         })
+        log.info({ identityId: userIdentity.id, platformId }, '[federatedAuthn] Looking up user by identity and platform')
         const user = await userService.getOneByIdentityAndPlatform({
             identityId: userIdentity.id,
             platformId,
         })
+        log.info({ userFound: !isNil(user), userId: user?.id }, '[federatedAuthn] User lookup result')
         assertNotNullOrUndefined(user, 'User Identity is found but not the user')
+
+        // Update externalId if provided (from SSO token)
+        if (!isNil(params.externalId) && user.externalId !== params.externalId) {
+            log.info({ userId: user.id, externalId: params.externalId }, '[federatedAuthn] Updating user externalId')
+            await userService.update({
+                id: user.id,
+                platformId,
+                externalId: params.externalId,
+            })
+        }
+
+        // Check if user has any projects, create one if not (for SSO users)
+        const hasProjects = await projectService.userHasProjects({
+            platformId,
+            userId: user.id,
+        })
+        let projectId: string | null = null
+        if (!hasProjects) {
+            log.info({ userId: user.id }, '[federatedAuthn] User has no projects, creating default project')
+            const defaultProject = await projectService.create({
+                displayName: `${userIdentity.firstName}'s Project`,
+                platformId,
+                ownerId: user.id,
+            })
+            projectId = defaultProject.id
+        }
+
         return authenticationUtils.getProjectAndToken({
             userId: user.id,
             platformId,
-            projectId: null,
+            projectId,
         })
     },
     async switchPlatform(params: SwitchPlatformParams): Promise<AuthenticationResponse> {
@@ -276,7 +305,9 @@ async function getPersonalPlatformIdForIdentity(identityId: string): Promise<str
         const platform = platforms.find((platform) => !platformUtils.isCustomerOnDedicatedDomain(platform))
         return platform?.id ?? null
     }
-    return null
+    // For COMMUNITY/ENTERPRISE editions, look up the user's platform
+    const platforms = await platformService.listPlatformsForIdentityWithAtleastProject({ identityId })
+    return platforms[0]?.id ?? null
 }
 
 
@@ -289,6 +320,7 @@ type FederatedAuthnParams = {
     trackEvents: boolean
     provider: UserIdentityProvider
     predefinedPlatformId: string | null
+    externalId?: string
 }
 
 type SignUpParams = {

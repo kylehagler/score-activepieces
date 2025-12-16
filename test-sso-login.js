@@ -11,10 +11,10 @@ const UI_URL = 'http://localhost:4200';
 
 // Test user data
 const testUser = {
-  email: 'testuser@example.com',
-  firstName: 'Test',
-  lastName: 'User',
-  externalId: 'score-user-123456'
+  email: 'kyle@thepinnaclelifegroup.com',
+  firstName: 'Kyle',
+  lastName: 'Hagler',
+  externalId: '550e8400-e29b-41d4-a716-446655440000'
 };
 
 // Generate JWT token
@@ -162,21 +162,20 @@ async function main() {
     readline.question('\nEnter your choice (1-3): ', async (answer) => {
       switch(answer) {
         case '1':
-          console.log('\n3️⃣ Setting up auto-login...');
+          console.log('\n3️⃣ Opening browser...');
+          console.log('\n⚠️  Due to browser security, automatic token injection requires manual steps:');
+          console.log('1. The browser will open to the ActivePieces sign-in page');
+          console.log('2. Open Developer Tools (Cmd+Option+I on Mac, F12 on Windows)');
+          console.log('3. Go to the Console tab');
+          console.log('4. Paste this command and press Enter:\n');
+          console.log(`localStorage.setItem('token', '${authData.token}');`);
+          console.log('\n5. Refresh the page (Cmd+R or F5)');
+          console.log('\nYou will be logged in as:', authData.email);
 
-          // Create a temporary server to handle the login
-          const serverPromise = createLoginServer(authData.token, authData.projectId);
-
-          // Open browser
+          // Open browser to the app
           const openCommand = process.platform === 'darwin' ? 'open' :
                             process.platform === 'win32' ? 'start' : 'xdg-open';
-          exec(`${openCommand} http://localhost:8080/login`);
-
-          console.log('🚀 Opening browser with auto-login...');
-          console.log('You should be automatically logged in!\n');
-
-          await serverPromise;
-          console.log('✅ Login complete! You can close this terminal.');
+          exec(`${openCommand} ${UI_URL}`);
           break;
 
         case '2':

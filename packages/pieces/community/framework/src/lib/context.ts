@@ -40,6 +40,7 @@ type AppWebhookTriggerHookContext<
 > = BaseContext<PieceAuth, TriggerProps> & {
   webhookUrl: string;
   payload: TriggerPayload;
+  server: ServerContext;
   app: {
     createListeners({
       events,
