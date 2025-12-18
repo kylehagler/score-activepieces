@@ -1,5 +1,6 @@
 import { PieceMetadataModel, PieceMetadataModelSummary } from '@activepieces/pieces-framework'
-import { AppSystemProp, apVersionUtil, filePiecesUtils } from '@activepieces/server-shared'
+import { score } from '@activepieces/piece-score'
+import { AppSystemProp, apVersionUtil } from '@activepieces/server-shared'
 import { isNil, ListVersionsResponse, PackageType, PieceSyncMode, PieceType } from '@activepieces/shared'
 import dayjs from 'dayjs'
 import { FastifyBaseLogger } from 'fastify'
@@ -17,8 +18,14 @@ const CLOUD_API_URL = 'https://cloud.activepieces.com/api/v1/pieces'
 const piecesRepo = repoFactory(PieceMetadataEntity)
 const syncMode = system.get<PieceSyncMode>(AppSystemProp.PIECES_SYNC_MODE)
 
-// Local pieces to sync in addition to official pieces (loaded from filesystem)
-const LOCAL_PIECES = ['score']
+// Local pieces to sync directly (imported, not from filesystem)
+const LOCAL_PIECES = [
+    {
+        piece: score,
+        name: '@activepieces/piece-score',
+        version: '0.0.1',
+    },
+]
 
 export const pieceSyncService = (log: FastifyBaseLogger) => ({
     async setup(): Promise<void> {
@@ -139,31 +146,31 @@ async function syncLocalPieces(log: FastifyBaseLogger): Promise<void> {
     }
 
     try {
-        log.info({ pieces: LOCAL_PIECES }, 'Syncing local pieces')
-        const pieces = await filePiecesUtils(LOCAL_PIECES, log).findAllPieces()
+        log.info({ pieces: LOCAL_PIECES.map(p => p.name) }, 'Syncing local pieces')
 
-        for (const piece of pieces) {
+        for (const localPiece of LOCAL_PIECES) {
+            const metadata = localPiece.piece.metadata()
             const existsInDb = await piecesRepo().existsBy({
-                name: piece.name,
-                version: piece.version,
+                name: localPiece.name,
+                version: localPiece.version,
             })
 
             if (!existsInDb) {
-                log.info({ name: piece.name, version: piece.version }, 'Syncing local piece into database')
+                log.info({ name: localPiece.name, version: localPiece.version }, 'Syncing local piece into database')
                 await pieceMetadataService(log).create({
                     pieceMetadata: {
-                        name: piece.name,
-                        displayName: piece.displayName,
-                        description: piece.description,
-                        logoUrl: piece.logoUrl,
-                        version: piece.version,
-                        minimumSupportedRelease: piece.minimumSupportedRelease,
-                        maximumSupportedRelease: piece.maximumSupportedRelease,
-                        auth: piece.auth,
-                        actions: piece.actions,
-                        triggers: piece.triggers,
-                        categories: piece.categories,
-                        authors: piece.authors,
+                        name: localPiece.name,
+                        displayName: metadata.displayName,
+                        description: metadata.description,
+                        logoUrl: metadata.logoUrl,
+                        version: localPiece.version,
+                        minimumSupportedRelease: metadata.minimumSupportedRelease,
+                        maximumSupportedRelease: metadata.maximumSupportedRelease,
+                        auth: metadata.auth,
+                        actions: metadata.actions,
+                        triggers: metadata.triggers,
+                        categories: metadata.categories,
+                        authors: localPiece.piece.authors,
                     },
                     packageType: PackageType.REGISTRY,
                     pieceType: PieceType.OFFICIAL,
