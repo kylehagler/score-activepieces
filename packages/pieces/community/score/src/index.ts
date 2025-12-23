@@ -1,6 +1,7 @@
 import { createPiece, PieceAuth } from '@activepieces/pieces-framework';
 import { PieceCategory } from '@activepieces/shared';
 import { newLead } from './lib/triggers/new-lead';
+import { leadUpdated } from './lib/triggers/lead-updated';
 
 export const score = createPiece({
     displayName: 'Score',
@@ -19,22 +20,32 @@ export const score = createPiece({
                 agent_user_id?: string;
             };
 
-            // Validate this is a Score webhook payload
-            if (!body || body.type !== 'INSERT' || body.table !== 'opportunities') {
+            // Validate this is a Score webhook payload for opportunities table
+            if (!body || body.table !== 'opportunities') {
                 return {};
             }
 
-            // Return the event type and identifier (agent_user_id)
-            // The identifier is used to route to the correct flow listeners
-            return {
-                event: 'new_lead',
-                identifierValue: body.agent_user_id ?? 'unknown',
-            };
+            // Route based on event type
+            if (body.type === 'INSERT') {
+                return {
+                    event: 'new_lead',
+                    identifierValue: body.agent_user_id ?? 'unknown',
+                };
+            }
+
+            if (body.type === 'UPDATE') {
+                return {
+                    event: 'lead_updated',
+                    identifierValue: body.agent_user_id ?? 'unknown',
+                };
+            }
+
+            return {};
         },
         // Score webhooks from Supabase don't have signature verification
         // The webhook is internal and secured at the network level
         verify: () => true,
     },
     actions: [],
-    triggers: [newLead],
+    triggers: [newLead, leadUpdated],
 });
