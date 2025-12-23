@@ -1,21 +1,21 @@
 import { createTrigger, Property, TriggerStrategy } from '@activepieces/pieces-framework';
-import { NewLeadPayload } from '../common/types';
+import { NewOpportunityPayload } from '../common/types';
 
-export const newLead = createTrigger({
-    name: 'new_lead',
-    displayName: 'New Lead',
-    description: 'Triggers when a new lead (opportunity) is assigned to you in Score',
+export const newOpportunity = createTrigger({
+    name: 'new_opportunity',
+    displayName: 'New Opportunity',
+    description: 'Triggers when a new opportunity is assigned to you in Score',
     auth: undefined,
     type: TriggerStrategy.APP_WEBHOOK,
     props: {
         instructions: Property.MarkDown({
             value: `## How It Works
 
-This trigger automatically fires when a new lead is created in Score and assigned to you.
+This trigger automatically fires when a new opportunity is created in Score and assigned to you.
 
 **No setup required!** The webhook is configured globally by your administrator.
 
-> Only leads where you are the assigned agent will trigger your flows.`
+> Only opportunities where you are the assigned agent will trigger your flows.`
         }),
     },
     sampleData: {
@@ -74,9 +74,9 @@ This trigger automatically fires when a new lead is created in Score and assigne
         );
         const ownerUser = await userResponse.json();
 
-        // Register this flow to listen for new_lead events for this user's agent_user_id
+        // Register this flow to listen for new_opportunity events for this user's agent_user_id
         context.app.createListeners({
-            events: ['new_lead'],
+            events: ['new_opportunity'],
             identifierValue: ownerUser.externalId,
         });
     },
@@ -122,9 +122,9 @@ This trigger automatically fires when a new lead is created in Score and assigne
     },
 
     async run(context) {
-        const payload = context.payload.body as NewLeadPayload;
+        const payload = context.payload.body as NewOpportunityPayload;
 
-        // Return the lead data (filtering is already done by the app webhook routing)
+        // Return the opportunity data (filtering is already done by the app webhook routing)
         return [{
             record: payload.record,
             contact: payload.contact,

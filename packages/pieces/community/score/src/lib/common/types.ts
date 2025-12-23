@@ -62,8 +62,8 @@ export interface Policy {
     updated_at: string | null;
 }
 
-// Webhook payload for new lead (INSERT on opportunities)
-export interface NewLeadPayload {
+// Webhook payload for new opportunity (INSERT on opportunities)
+export interface NewOpportunityPayload {
     type: 'INSERT';
     table: 'opportunities';
     schema: string;
@@ -75,8 +75,8 @@ export interface NewLeadPayload {
     timestamp: string;
 }
 
-// Webhook payload for lead updated (UPDATE on opportunities)
-export interface LeadUpdatedPayload {
+// Webhook payload for opportunity updated (UPDATE on opportunities)
+export interface OpportunityUpdatedPayload {
     type: 'UPDATE';
     table: 'opportunities';
     schema: string;

@@ -1,19 +1,19 @@
 import { createAction, Property } from '@activepieces/pieces-framework';
 
-export const updateLead = createAction({
+export const updateOpportunity = createAction({
     auth: undefined,
-    name: 'update_lead',
-    displayName: 'Update Lead',
-    description: 'Update a lead (opportunity) in Score',
+    name: 'update_opportunity',
+    displayName: 'Update Opportunity',
+    description: 'Update an opportunity in Score',
     props: {
-        lead_id: Property.ShortText({
-            displayName: 'Lead ID',
-            description: 'The UUID of the lead (opportunity) to update',
+        opportunity_id: Property.ShortText({
+            displayName: 'Opportunity ID',
+            description: 'The UUID of the opportunity to update',
             required: true,
         }),
         status: Property.StaticDropdown({
             displayName: 'Status',
-            description: 'The new status for the lead',
+            description: 'The new status for the opportunity',
             required: false,
             options: {
                 options: [
@@ -42,7 +42,7 @@ export const updateLead = createAction({
         }),
     },
     async run(context) {
-        const { lead_id, status, type } = context.propsValue;
+        const { opportunity_id, status, type } = context.propsValue;
 
         // Build the update object with only provided fields
         const updateData: Record<string, unknown> = {};
@@ -55,7 +55,7 @@ export const updateLead = createAction({
 
         // Call Score API to update the opportunity
         const response = await fetch(
-            `https://str8-crm.vercel.app/api/opportunities/${lead_id}/update`,
+            `https://str8-crm.vercel.app/api/opportunities/${opportunity_id}/update`,
             {
                 method: 'POST',
                 headers: {
@@ -67,14 +67,14 @@ export const updateLead = createAction({
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`Failed to update lead: ${response.status} ${errorText}`);
+            throw new Error(`Failed to update opportunity: ${response.status} ${errorText}`);
         }
 
         const result = await response.json();
 
         return {
             success: true,
-            lead: result,
+            opportunity: result,
         };
     },
 });

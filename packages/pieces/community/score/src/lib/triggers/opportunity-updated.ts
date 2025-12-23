@@ -1,21 +1,21 @@
 import { createTrigger, Property, TriggerStrategy } from '@activepieces/pieces-framework';
-import { LeadUpdatedPayload } from '../common/types';
+import { OpportunityUpdatedPayload } from '../common/types';
 
-export const leadUpdated = createTrigger({
-    name: 'lead_updated',
-    displayName: 'Lead Updated',
-    description: 'Triggers when a lead (opportunity) assigned to you is updated in Score',
+export const opportunityUpdated = createTrigger({
+    name: 'opportunity_updated',
+    displayName: 'Opportunity Updated',
+    description: 'Triggers when an opportunity assigned to you is updated in Score',
     auth: undefined,
     type: TriggerStrategy.APP_WEBHOOK,
     props: {
         instructions: Property.MarkDown({
             value: `## How It Works
 
-This trigger automatically fires when a lead assigned to you is updated in Score.
+This trigger automatically fires when an opportunity assigned to you is updated in Score.
 
 **No setup required!** The webhook is configured globally by your administrator.
 
-> Only leads where you are the assigned agent will trigger your flows.`
+> Only opportunities where you are the assigned agent will trigger your flows.`
         }),
     },
     sampleData: {
@@ -77,9 +77,9 @@ This trigger automatically fires when a lead assigned to you is updated in Score
         );
         const ownerUser = await userResponse.json();
 
-        // Register this flow to listen for lead_updated events for this user's agent_user_id
+        // Register this flow to listen for opportunity_updated events for this user's agent_user_id
         context.app.createListeners({
-            events: ['lead_updated'],
+            events: ['opportunity_updated'],
             identifierValue: ownerUser.externalId,
         });
     },
@@ -128,9 +128,9 @@ This trigger automatically fires when a lead assigned to you is updated in Score
     },
 
     async run(context) {
-        const payload = context.payload.body as LeadUpdatedPayload;
+        const payload = context.payload.body as OpportunityUpdatedPayload;
 
-        // Return the updated lead data (filtering is already done by the app webhook routing)
+        // Return the updated opportunity data (filtering is already done by the app webhook routing)
         return [{
             record: payload.record,
             old_record: payload.old_record,

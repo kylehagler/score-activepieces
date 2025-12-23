@@ -1,9 +1,10 @@
 import { createPiece, PieceAuth } from '@activepieces/pieces-framework';
 import { PieceCategory } from '@activepieces/shared';
-import { newLead } from './lib/triggers/new-lead';
-import { leadUpdated } from './lib/triggers/lead-updated';
+import { newOpportunity } from './lib/triggers/new-opportunity';
+import { opportunityUpdated } from './lib/triggers/opportunity-updated';
 import { policyUpdated } from './lib/triggers/policy-updated';
-import { updateLead } from './lib/actions/update-lead';
+import { updateOpportunity } from './lib/actions/update-opportunity';
+import { addContactAndOpportunity } from './lib/actions/add-contact-and-opportunity';
 
 export const score = createPiece({
     displayName: 'Score',
@@ -30,13 +31,13 @@ export const score = createPiece({
             if (body.table === 'opportunities') {
                 if (body.type === 'INSERT') {
                     return {
-                        event: 'new_lead',
+                        event: 'new_opportunity',
                         identifierValue: body.agent_user_id ?? 'unknown',
                     };
                 }
                 if (body.type === 'UPDATE') {
                     return {
-                        event: 'lead_updated',
+                        event: 'opportunity_updated',
                         identifierValue: body.agent_user_id ?? 'unknown',
                     };
                 }
@@ -57,6 +58,6 @@ export const score = createPiece({
         // The webhook is internal and secured at the network level
         verify: () => true,
     },
-    actions: [updateLead],
-    triggers: [newLead, leadUpdated, policyUpdated],
+    actions: [updateOpportunity, addContactAndOpportunity],
+    triggers: [newOpportunity, opportunityUpdated, policyUpdated],
 });
