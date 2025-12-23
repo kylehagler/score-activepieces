@@ -23,7 +23,7 @@ const LOCAL_PIECES = [
     {
         piece: score,
         name: '@activepieces/piece-score',
-        version: '0.0.2',
+        version: '0.0.3',
     },
 ]
 

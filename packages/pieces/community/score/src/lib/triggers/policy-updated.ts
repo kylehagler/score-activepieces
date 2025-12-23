@@ -1,42 +1,45 @@
 import { createTrigger, Property, TriggerStrategy } from '@activepieces/pieces-framework';
-import { LeadUpdatedPayload } from '../common/types';
+import { PolicyUpdatedPayload } from '../common/types';
 
-export const leadUpdated = createTrigger({
-    name: 'lead_updated',
-    displayName: 'Lead Updated',
-    description: 'Triggers when a lead (opportunity) assigned to you is updated in Score',
+export const policyUpdated = createTrigger({
+    name: 'policy_updated',
+    displayName: 'Policy Updated',
+    description: 'Triggers when a policy assigned to you is updated in Score',
     auth: undefined,
     type: TriggerStrategy.APP_WEBHOOK,
     props: {
         instructions: Property.MarkDown({
             value: `## How It Works
 
-This trigger automatically fires when a lead assigned to you is updated in Score.
+This trigger automatically fires when a policy assigned to you is updated in Score.
 
 **No setup required!** The webhook is configured globally by your administrator.
 
-> Only leads where you are the assigned agent will trigger your flows.`
+> Only policies where you are the assigned agent will trigger your flows.`
         }),
     },
     sampleData: {
         record: {
             id: 'uuid-123',
-            contact_id: 'uuid-456',
-            agent_user_id: 'agent-uuid-789',
-            lead_source_id: 'source-uuid',
-            status: 'contacted',
-            type: 'life_insurance',
-            notes: 'Follow up scheduled',
-            follow_up_date: '2024-01-15',
+            opportunity_id: 'opp-uuid-456',
+            carrier_id: 'carrier-uuid',
+            policy_number: 'POL-12345',
+            policy_status: 'active',
+            face_amount: 500000,
+            annual_premium: 540,
+            product_type: 'term',
+            product_name: 'Term Life 20',
+            submitted_date: '2024-01-01',
+            effective_date: '2024-01-15',
+            is_split: false,
             created_at: '2024-01-01T00:00:00Z',
-            updated_at: '2024-01-02T10:30:00Z'
+            updated_at: '2024-01-15T10:30:00Z'
         },
         old_record: {
-            status: 'new',
-            notes: null
+            policy_status: 'pending'
         },
         contact: {
-            id: 'uuid-456',
+            id: 'contact-uuid-789',
             first_name: 'John',
             middle_name: null,
             last_name: 'Doe',
@@ -56,7 +59,7 @@ This trigger automatically fires when a lead assigned to you is updated in Score
             updated_at: '2024-01-01T00:00:00Z'
         },
         agent_user_id: 'agent-uuid-789',
-        timestamp: '2024-01-02T10:30:00Z'
+        timestamp: '2024-01-15T10:30:00Z'
     },
 
     async onEnable(context) {
@@ -82,9 +85,9 @@ This trigger automatically fires when a lead assigned to you is updated in Score
         );
         const ownerUser = await userResponse.json();
 
-        // Register this flow to listen for lead_updated events for this user's agent_user_id
+        // Register this flow to listen for policy_updated events for this user's agent_user_id
         context.app.createListeners({
-            events: ['lead_updated'],
+            events: ['policy_updated'],
             identifierValue: ownerUser.externalId,
         });
     },
@@ -98,25 +101,29 @@ This trigger automatically fires when a lead assigned to you is updated in Score
         return [{
             record: {
                 id: 'test-uuid-123',
-                contact_id: 'test-uuid-456',
-                agent_user_id: 'test-agent-id',
-                lead_source_id: null,
-                status: 'contacted',
-                type: 'life_insurance',
-                notes: 'Test update',
-                follow_up_date: null,
-                created_at: new Date(Date.now() - 86400000).toISOString(),
+                opportunity_id: 'test-opp-456',
+                carrier_id: 'test-carrier-id',
+                policy_number: 'POL-TEST-001',
+                policy_status: 'active',
+                face_amount: 500000,
+                annual_premium: 540,
+                product_type: 'term',
+                product_name: 'Term Life 20',
+                submitted_date: new Date(Date.now() - 86400000 * 14).toISOString().split('T')[0],
+                effective_date: new Date().toISOString().split('T')[0],
+                is_split: false,
+                created_at: new Date(Date.now() - 86400000 * 14).toISOString(),
                 updated_at: new Date().toISOString()
             },
             old_record: {
-                status: 'new'
+                policy_status: 'pending'
             },
             contact: {
-                id: 'test-uuid-456',
+                id: 'test-contact-789',
                 first_name: 'Test',
                 middle_name: null,
-                last_name: 'Lead',
-                full_name: 'Test Lead',
+                last_name: 'Policy',
+                full_name: 'Test Policy',
                 name_suffix: null,
                 email: 'test@example.com',
                 phone: '555-0000',
@@ -137,9 +144,9 @@ This trigger automatically fires when a lead assigned to you is updated in Score
     },
 
     async run(context) {
-        const payload = context.payload.body as LeadUpdatedPayload;
+        const payload = context.payload.body as PolicyUpdatedPayload;
 
-        // Return the updated lead data (filtering is already done by the app webhook routing)
+        // Return the updated policy data (filtering is already done by the app webhook routing)
         return [{
             record: payload.record,
             old_record: payload.old_record,

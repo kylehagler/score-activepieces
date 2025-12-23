@@ -2,6 +2,7 @@ import { createPiece, PieceAuth } from '@activepieces/pieces-framework';
 import { PieceCategory } from '@activepieces/shared';
 import { newLead } from './lib/triggers/new-lead';
 import { leadUpdated } from './lib/triggers/lead-updated';
+import { policyUpdated } from './lib/triggers/policy-updated';
 
 export const score = createPiece({
     displayName: 'Score',
@@ -20,24 +21,33 @@ export const score = createPiece({
                 agent_user_id?: string;
             };
 
-            // Validate this is a Score webhook payload for opportunities table
-            if (!body || body.table !== 'opportunities') {
+            if (!body || !body.table) {
                 return {};
             }
 
-            // Route based on event type
-            if (body.type === 'INSERT') {
-                return {
-                    event: 'new_lead',
-                    identifierValue: body.agent_user_id ?? 'unknown',
-                };
+            // Route based on table and event type
+            if (body.table === 'opportunities') {
+                if (body.type === 'INSERT') {
+                    return {
+                        event: 'new_lead',
+                        identifierValue: body.agent_user_id ?? 'unknown',
+                    };
+                }
+                if (body.type === 'UPDATE') {
+                    return {
+                        event: 'lead_updated',
+                        identifierValue: body.agent_user_id ?? 'unknown',
+                    };
+                }
             }
 
-            if (body.type === 'UPDATE') {
-                return {
-                    event: 'lead_updated',
-                    identifierValue: body.agent_user_id ?? 'unknown',
-                };
+            if (body.table === 'policies') {
+                if (body.type === 'UPDATE') {
+                    return {
+                        event: 'policy_updated',
+                        identifierValue: body.agent_user_id ?? 'unknown',
+                    };
+                }
             }
 
             return {};
@@ -47,5 +57,5 @@ export const score = createPiece({
         verify: () => true,
     },
     actions: [],
-    triggers: [newLead, leadUpdated],
+    triggers: [newLead, leadUpdated, policyUpdated],
 });

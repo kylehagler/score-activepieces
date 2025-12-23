@@ -19,18 +19,24 @@ This trigger automatically fires when a new lead is created in Score and assigne
         }),
     },
     sampleData: {
-        opportunity: {
+        record: {
             id: 'uuid-123',
             contact_id: 'uuid-456',
+            agent_user_id: 'agent-uuid-789',
+            lead_source_id: 'source-uuid',
             status: 'new',
             type: 'life_insurance',
-            created_at: '2024-01-01T00:00:00Z'
+            notes: null,
+            follow_up_date: null,
+            created_at: '2024-01-01T00:00:00Z',
+            updated_at: '2024-01-01T00:00:00Z'
         },
         contact: {
             id: 'uuid-456',
             first_name: 'John',
             middle_name: null,
             last_name: 'Doe',
+            full_name: 'John Doe',
             name_suffix: null,
             email: 'john@example.com',
             phone: '555-1234',
@@ -40,8 +46,12 @@ This trigger automatically fires when a new lead is created in Score and assigne
             state: 'TX',
             zip: '78701',
             birthdate: '1985-06-15',
-            agent_user_id: 'agent-uuid-789'
+            agent_user_id: 'agent-uuid-789',
+            client_portal_id: null,
+            created_at: '2024-01-01T00:00:00Z',
+            updated_at: '2024-01-01T00:00:00Z'
         },
+        agent_user_id: 'agent-uuid-789',
         timestamp: '2024-01-01T00:00:00Z'
     },
 
@@ -82,18 +92,24 @@ This trigger automatically fires when a new lead is created in Score and assigne
     async test() {
         // Return sample data for testing
         return [{
-            opportunity: {
+            record: {
                 id: 'test-uuid-123',
                 contact_id: 'test-uuid-456',
+                agent_user_id: 'test-agent-id',
+                lead_source_id: null,
                 status: 'new',
                 type: 'life_insurance',
-                created_at: new Date().toISOString()
+                notes: null,
+                follow_up_date: null,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
             },
             contact: {
                 id: 'test-uuid-456',
                 first_name: 'Test',
                 middle_name: null,
                 last_name: 'Lead',
+                full_name: 'Test Lead',
                 name_suffix: null,
                 email: 'test@example.com',
                 phone: '555-0000',
@@ -103,8 +119,12 @@ This trigger automatically fires when a new lead is created in Score and assigne
                 state: 'TX',
                 zip: '78701',
                 birthdate: '1990-01-01',
-                agent_user_id: 'test-agent-id'
+                agent_user_id: 'test-agent-id',
+                client_portal_id: null,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
             },
+            agent_user_id: 'test-agent-id',
             timestamp: new Date().toISOString()
         }];
     },
@@ -114,8 +134,9 @@ This trigger automatically fires when a new lead is created in Score and assigne
 
         // Return the lead data (filtering is already done by the app webhook routing)
         return [{
-            opportunity: payload.opportunity,
+            record: payload.record,
             contact: payload.contact,
+            agent_user_id: payload.agent_user_id,
             timestamp: payload.timestamp
         }];
     }
