@@ -53,6 +53,7 @@ ENV NX_NO_CLOUD=true
 
 RUN npx nx run-many --target=build --projects=react-ui --skip-nx-cache
 RUN npx nx run-many --target=build --projects=server-api --configuration production --skip-nx-cache
+RUN npx nx build pieces-score --skip-nx-cache
 
 # Install backend production dependencies
 RUN cd dist/packages/server/api && bun install --production --force
@@ -76,11 +77,13 @@ COPY --from=build /usr/src/app/LICENSE .
 RUN mkdir -p /usr/src/app/dist/packages/server/
 RUN mkdir -p /usr/src/app/dist/packages/engine/
 RUN mkdir -p /usr/src/app/dist/packages/shared/
+RUN mkdir -p /usr/src/app/dist/packages/pieces/
 
 # Copy Output files to appropriate directory from build stage
 COPY --from=build /usr/src/app/dist/packages/engine/ /usr/src/app/dist/packages/engine/
 COPY --from=build /usr/src/app/dist/packages/server/ /usr/src/app/dist/packages/server/
 COPY --from=build /usr/src/app/dist/packages/shared/ /usr/src/app/dist/packages/shared/
+COPY --from=build /usr/src/app/dist/packages/pieces/ /usr/src/app/dist/packages/pieces/
 
 RUN cd /usr/src/app/dist/packages/server/api/ && bun install --production --force && bun add pg@8.11.3
 
