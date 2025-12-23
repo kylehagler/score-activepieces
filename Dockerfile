@@ -76,18 +76,13 @@ COPY --from=build /usr/src/app/LICENSE .
 RUN mkdir -p /usr/src/app/dist/packages/server/
 RUN mkdir -p /usr/src/app/dist/packages/engine/
 RUN mkdir -p /usr/src/app/dist/packages/shared/
-RUN mkdir -p /usr/src/app/dist/packages/pieces/
 
 # Copy Output files to appropriate directory from build stage
 COPY --from=build /usr/src/app/dist/packages/engine/ /usr/src/app/dist/packages/engine/
 COPY --from=build /usr/src/app/dist/packages/server/ /usr/src/app/dist/packages/server/
 COPY --from=build /usr/src/app/dist/packages/shared/ /usr/src/app/dist/packages/shared/
-COPY --from=build /usr/src/app/dist/packages/pieces/ /usr/src/app/dist/packages/pieces/
 
 RUN cd /usr/src/app/dist/packages/server/api/ && bun install --production --force && bun add pg@8.11.3
-
-# Copy Output files to appropriate directory from build stage
-COPY --from=build /usr/src/app/packages packages
 # Copy frontend files to Nginx document root directory from build stage
 COPY --from=build /usr/src/app/dist/packages/react-ui /usr/share/nginx/html/
 
