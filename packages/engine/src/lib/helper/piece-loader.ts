@@ -151,7 +151,9 @@ async function loadPieceFromDistFolder(packageName: string): Promise<string | nu
             }
             return null
         }))
-        return packageJsonPath
+        if (packageJsonPath) {
+            return packageJsonPath
+        }
     }
     return null
 }
