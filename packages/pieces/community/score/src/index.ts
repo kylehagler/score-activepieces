@@ -7,6 +7,7 @@ export const score = createPiece({
     description: 'Insurance CRM by Pinnacle Life Group',
     auth: PieceAuth.None(),
     minimumSupportedRelease: '0.30.0',
+    maximumSupportedRelease: '99.99.99',
     logoUrl: '/pinnacle.jpg',
     categories: [PieceCategory.SALES_AND_CRM],
     authors: ['pinnacle-life-group'],
