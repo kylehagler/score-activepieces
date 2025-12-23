@@ -22,18 +22,13 @@ This trigger automatically fires when a lead assigned to you is updated in Score
         record: {
             id: 'uuid-123',
             contact_id: 'uuid-456',
-            agent_user_id: 'agent-uuid-789',
-            lead_source_id: 'source-uuid',
-            status: 'contacted',
-            type: 'life_insurance',
-            notes: 'Follow up scheduled',
-            follow_up_date: '2024-01-15',
+            status: 'IN_CONTACT',
+            type: 'LIFE',
             created_at: '2024-01-01T00:00:00Z',
             updated_at: '2024-01-02T10:30:00Z'
         },
         old_record: {
-            status: 'new',
-            notes: null
+            status: 'NEW_LEAD'
         },
         contact: {
             id: 'uuid-456',
@@ -99,17 +94,13 @@ This trigger automatically fires when a lead assigned to you is updated in Score
             record: {
                 id: 'test-uuid-123',
                 contact_id: 'test-uuid-456',
-                agent_user_id: 'test-agent-id',
-                lead_source_id: null,
-                status: 'contacted',
-                type: 'life_insurance',
-                notes: 'Test update',
-                follow_up_date: null,
+                status: 'IN_CONTACT',
+                type: 'LIFE',
                 created_at: new Date(Date.now() - 86400000).toISOString(),
                 updated_at: new Date().toISOString()
             },
             old_record: {
-                status: 'new'
+                status: 'NEW_LEAD'
             },
             contact: {
                 id: 'test-uuid-456',

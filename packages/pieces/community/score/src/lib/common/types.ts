@@ -24,15 +24,25 @@ export interface Contact {
 export interface Opportunity {
     id: string;
     contact_id: string;
-    agent_user_id: string | null;
-    lead_source_id: string | null;
-    status: string;
-    type: string | null;
-    notes: string | null;
-    follow_up_date: string | null;
+    status: OpportunityStatus;
+    type: OpportunityType;
     created_at: string | null;
     updated_at: string | null;
 }
+
+// opportunity_status enum
+export type OpportunityStatus =
+    | 'NEW_LEAD'
+    | 'CONTACT_ATTEMPTED'
+    | 'IN_CONTACT'
+    | 'APPOINTMENT_BOOKED'
+    | 'FOLLOW_UP'
+    | 'PROPOSAL_SENT'
+    | 'CLOSED_WON'
+    | 'CLOSED_LOST';
+
+// opportunity_type enum
+export type OpportunityType = 'LIFE' | 'HEALTH' | 'ANNUITY';
 
 // Policy type based on Supabase schema
 export interface Policy {

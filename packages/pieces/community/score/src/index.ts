@@ -3,6 +3,7 @@ import { PieceCategory } from '@activepieces/shared';
 import { newLead } from './lib/triggers/new-lead';
 import { leadUpdated } from './lib/triggers/lead-updated';
 import { policyUpdated } from './lib/triggers/policy-updated';
+import { updateLead } from './lib/actions/update-lead';
 
 export const score = createPiece({
     displayName: 'Score',
@@ -56,6 +57,6 @@ export const score = createPiece({
         // The webhook is internal and secured at the network level
         verify: () => true,
     },
-    actions: [],
+    actions: [updateLead],
     triggers: [newLead, leadUpdated, policyUpdated],
 });

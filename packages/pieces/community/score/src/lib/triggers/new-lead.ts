@@ -22,12 +22,8 @@ This trigger automatically fires when a new lead is created in Score and assigne
         record: {
             id: 'uuid-123',
             contact_id: 'uuid-456',
-            agent_user_id: 'agent-uuid-789',
-            lead_source_id: 'source-uuid',
-            status: 'new',
-            type: 'life_insurance',
-            notes: null,
-            follow_up_date: null,
+            status: 'NEW_LEAD',
+            type: 'LIFE',
             created_at: '2024-01-01T00:00:00Z',
             updated_at: '2024-01-01T00:00:00Z'
         },
@@ -95,12 +91,8 @@ This trigger automatically fires when a new lead is created in Score and assigne
             record: {
                 id: 'test-uuid-123',
                 contact_id: 'test-uuid-456',
-                agent_user_id: 'test-agent-id',
-                lead_source_id: null,
-                status: 'new',
-                type: 'life_insurance',
-                notes: null,
-                follow_up_date: null,
+                status: 'NEW_LEAD',
+                type: 'LIFE',
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
             },
